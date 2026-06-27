@@ -1,0 +1,28 @@
+Project Mechanics - Stock News Watchdog
+
+External Services Connected
+
+1. News API
+   
+   - Purpose: Fetch latest stock-related news headlines.
+   - Authentication Type: API Key
+
+2. OpenRouter API (GPT-4o Mini)
+   
+   - Purpose: Perform AI-based sentiment analysis on stock news.
+   - Authentication Type: API Key
+
+3. Gmail
+   
+   - Purpose: Send automated email alerts containing sentiment analysis and investor summaries.
+   - Authentication Type: OAuth2
+
+AI Prompt Used
+
+"Analyze the following stock news headlines. For each headline provide: Headline, Sentiment (Positive, Negative, or Neutral), and a one-line analysis. Finally provide Overall Market Sentiment, Recommendation (BUY, HOLD, or SELL), and an Investor Summary. Return the response in plain text only without Markdown formatting."
+
+Workflow
+
+News API → OpenRouter AI → Gmail
+
+The workflow automatically fetches stock news, analyzes sentiment using AI, and sends the analysis report to the user via email.
