@@ -1,0 +1,153 @@
+
+Project: Lost & Found Matching System
+Platform: n8n (Self-Hosted)
+
+========================================
+1. External Services
+========================================
+
+1. Google Forms
+Purpose:
+- Collect lost item reports.
+- Collect found item reports.
+
+Authentication:
+- Google Account
+
+------------------------------------------------
+
+2. Google Sheets
+Purpose:
+- Store Lost Form responses.
+- Store Found Form responses.
+- Retrieve lost item records for comparison.
+
+Authentication:
+- OAuth2 (Google)
+
+------------------------------------------------
+
+3. Google Gemini
+Purpose:
+- Compare lost and found item records.
+- Determine whether they are likely the same item.
+- Return a JSON object containing match status, confidence score, and reason.
+
+Authentication:
+- Google Gemini API Key
+
+------------------------------------------------
+
+4. Gmail
+Purpose:
+- Send email notifications to the owner of the lost item when a potential match is found.
+- Notify the finder that a potential owner has been identified.
+
+Authentication:
+- OAuth2 (Google)
+
+========================================
+2. Workflow Overview
+========================================
+
+1. A user submits a Found Item form.
+2. The workflow is triggered.
+3. The workflow retrieves all Lost Item records from Google Sheets.
+4. Each lost item is compared against the found item using Google Gemini.
+5. Gemini returns a JSON response indicating whether the items match.
+6. An IF node checks the "match" value.
+7. If match is true:
+   - An email is sent to the person who lost the item.
+   - An email is sent to the finder.
+8. If match is false:
+   - No email is sent and the workflow continues or ends.
+
+========================================
+3. AI Prompt
+========================================
+
+You are a Lost & Found matching assistant.
+
+You will receive two JSON objects:
+
+1. found_item
+2. lost_item
+
+Compare ONLY these fields:
+
+Found Item:
+- category
+- item_name
+- description
+- found_date
+- found_location
+- additional_notes
+
+Lost Item:
+- category
+- item_name
+- description
+- lost_date
+- lost_location
+- distinctive_feature
+- additional_notes
+
+Matching Rules:
+- Category must match or be very similar.
+- Item names should match or be closely related.
+- Compare descriptions for:
+  - color
+  - brand
+  - model
+  - serial number
+  - unique markings
+  - scratches
+  - stickers
+  - engravings
+  - size
+  - contents (if applicable)
+- Compare locations.
+- Compare dates.
+- Distinctive features provide strong evidence.
+- Additional notes may support the match.
+
+Scoring:
+- Strong Match: 90–100
+- Good Match: 70–89
+- Possible Match: 50–69
+- Poor Match: Below 50
+
+Return ONLY valid JSON in this format:
+
+{
+  "match": true,
+  "confidence": 95,
+  "reason": "Both describe a black wallet with a scratch found near the library."
+}
+
+or
+
+{
+  "match": false,
+  "confidence": 20,
+  "reason": "Descriptions do not match."
+}
+
+========================================
+4. Decision Logic
+========================================
+
+IF match == true
+    Send notification emails to both the lost-item owner and the finder.
+ELSE
+    End workflow without sending emails.
+
+========================================
+5. Authentication Summary
+========================================
+
+Google Forms       : Google Account
+Google Sheets      : OAuth2
+Google Gemini      : API Key
+Gmail              : OAuth2
+
