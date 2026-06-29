@@ -1,0 +1,188 @@
+{
+  "name": "Stock news watchdog",
+  "nodes": [
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        0,
+        0
+      ],
+      "id": "5b1a8f96-bb0a-477f-b643-887cda308df9",
+      "name": "When clicking ‘Execute workflow’"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "d1526d67-a8c6-4c59-a031-15715875a54c",
+              "name": "ticker",
+              "value": "NVDA",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        208,
+        0
+      ],
+      "id": "0222478d-913c-4ca9-bea0-5d59095f313f",
+      "name": "Edit Fields"
+    },
+    {
+      "parameters": {
+        "url": "https://newsapi.org/v2/everything",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "q",
+              "value": "={{$json.ticker}}"
+            },
+            {
+              "name": "pageSize",
+              "value": "5"
+            },
+            {
+              "name": "sortBy",
+              "value": "publishedAt"
+            },
+            {
+              "name": "apiKey",
+              "value": "api_key"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        400,
+        16
+      ],
+      "id": "75b9ea80-c3bb-423a-ace0-9fcd90ea8002",
+      "name": "HTTP Request"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://openrouter.ai/api/v1/chat/completions",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "Bearer api_key"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"model\": \"openai/gpt-4o-mini\",\n  \"messages\": [\n    {\n      \"role\": \"system\",\n      \"content\": \"You are a financial news analyst. Always return responses in plain text only. Do not use Markdown, headings with #, bullet points, tables, or special formatting.\"\n    },\n    {\n      \"role\": \"user\",\n      \"content\": \"Analyze the following stock news headlines. For each headline, provide:\\n1. Headline\\n2. Sentiment (Positive, Negative, or Neutral)\\n3. A one-line analysis\\n\\nFinally provide:\\nOverall Market Sentiment\\nRecommendation (BUY, HOLD, or SELL)\\nInvestor Summary\\n\\nIMPORTANT: Return the response in plain text only. Do not use Markdown symbols like #, ##, ###, **, or bullet points.\\n\\nHeadlines:\\n{{$node['HTTP Request'].json['articles'].map(a => a.title).join('')}}\"\n    }\n  ]\n}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        608,
+        16
+      ],
+      "id": "f893212d-1ec9-466e-8781-5da5e6c15e67",
+      "name": "HTTP Request1"
+    },
+    {
+      "parameters": {
+        "sendTo": "sreenandas88@gmail.com",
+        "subject": "Stock News Alert",
+        "message": "=<h1>Stock News Watchdog Alert</h1>\n\n<h2>Sentiment Analysis Results</h2>\n\n<div style=\"background-color:#f4f4f4; padding:15px; border-radius:8px; border-left:5px solid #007bff;\">\n  {{$json.choices[0].message.content}}\n</div>\n\n<br>\n\n<h2>Investor Summary</h2>\n\n<p>\nPlease review the sentiment analysis above before making investment decisions.\n</p>\n\n<hr>\n\n<p style=\"color:gray; font-size:12px;\">\nThis email was generated automatically by n8n using AI.\n</p>",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.2,
+      "position": [
+        816,
+        16
+      ],
+      "id": "2c7c3c78-8517-456e-a442-4bf0407fa730",
+      "name": "Send a message",
+      "webhookId": "5cadf021-a309-4c43-94c6-058fa7abe313",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "6q0sEYu02hslbNM1",
+          "name": "Gmail OAuth2 API"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "When clicking ‘Execute workflow’": {
+      "main": [
+        [
+          {
+            "node": "Edit Fields",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Edit Fields": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP Request": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP Request1": {
+      "main": [
+        [
+          {
+            "node": "Send a message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  },
+  "versionId": "d1b1cec0-58c0-46cc-97e0-651faff8c540",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "f1bbfdaba0d6488328f61cb81d0c9ea15133e1fdcb72fe45e103bc802e42d6b0"
+  },
+  "nodeGroups": [],
+  "id": "2xoZP0h31AoZTsEy",
+  "tags": []
+}
