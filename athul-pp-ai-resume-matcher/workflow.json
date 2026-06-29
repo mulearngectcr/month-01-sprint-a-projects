@@ -38,26 +38,11 @@
       "type": "n8n-nodes-base.extractFromFile",
       "typeVersion": 1.1,
       "position": [
-        32,
+        176,
         32
       ],
       "id": "e6a503e4-2ace-4569-9e25-28b8f80f3d32",
       "name": "Extract from File"
-    },
-    {
-      "parameters": {
-        "mode": "combine",
-        "combineBy": "combineByPosition",
-        "options": {}
-      },
-      "type": "n8n-nodes-base.merge",
-      "typeVersion": 3.2,
-      "position": [
-        224,
-        112
-      ],
-      "id": "867176d1-22b9-46c8-ba37-2f9f6189b386",
-      "name": "Merge"
     },
     {
       "parameters": {
@@ -105,7 +90,7 @@
       "type": "n8n-nodes-base.telegramTrigger",
       "typeVersion": 1.2,
       "position": [
-        -176,
+        -304,
         112
       ],
       "id": "58d2373a-8345-4a9f-9774-e016bbb26dcc",
@@ -139,6 +124,62 @@
           "name": "Telegram account"
         }
       }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "658dd2a8-d735-4241-b06f-b087f3724793",
+              "leftValue": "={{ $json.message.document.mime_type }}",
+              "rightValue": "application/pdf",
+              "operator": {
+                "type": "string",
+                "operation": "equals",
+                "name": "filter.operator.equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        -96,
+        48
+      ],
+      "id": "5c42c302-e458-43c1-b368-433e77376cf2",
+      "name": "If"
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $('Telegram Trigger').item.json.message.chat.id }}",
+        "text": "Please send your resume as a PDF",
+        "additionalFields": {}
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        176,
+        -128
+      ],
+      "id": "03c32275-f13d-4b28-96b1-0eef3743845c",
+      "name": "Send a text message1",
+      "webhookId": "c76e7a2c-cd76-44e7-9cda-4bf66855b285",
+      "credentials": {
+        "telegramApi": {
+          "id": "mKDVlsLCHWjslbjp",
+          "name": "Telegram account"
+        }
+      }
     }
   ],
   "pinData": {},
@@ -147,7 +188,7 @@
       "main": [
         [
           {
-            "node": "Merge",
+            "node": "Basic LLM Chain",
             "type": "main",
             "index": 0
           }
@@ -155,17 +196,6 @@
       ]
     },
     "Get row(s) in sheet": {
-      "main": [
-        [
-          {
-            "node": "Merge",
-            "type": "main",
-            "index": 1
-          }
-        ]
-      ]
-    },
-    "Merge": {
       "main": [
         [
           {
@@ -196,7 +226,7 @@
             "index": 0
           },
           {
-            "node": "Extract from File",
+            "node": "If",
             "type": "main",
             "index": 0
           }
@@ -213,6 +243,24 @@
           }
         ]
       ]
+    },
+    "If": {
+      "main": [
+        [
+          {
+            "node": "Extract from File",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Send a text message1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     }
   },
   "active": false,
@@ -221,7 +269,7 @@
     "binaryMode": "separate",
     "availableInMCP": false
   },
-  "versionId": "dd4ae8a9-0d6d-4262-859c-ac2df684ffe8",
+  "versionId": "252512b7-f0c0-4ab0-b2e1-508c1feb3f3c",
   "meta": {
     "templateCredsSetupCompleted": true,
     "instanceId": "4c116f0452e51577b4b6c536a0b8a3371f0f3db8d75da256cc0f4e7f99a203e1"

@@ -1,18 +1,77 @@
-Project: AI Resume Matcher
-Author: Athul P P
+======================================================================
+SYSTEM CONFIGURATION SPECIFICATION: AI RESUME MATCHER AUTOMATION
+======================================================================
 
-External Services Connected:
-1. Google Gemini API (AI Processing)
+1. ENVIRONMENT & PLATFORM REQUIREMENTS
+----------------------------------------------------------------------
+* Automation Engine: n8n Community Edition (Self-Hosted)
+* Host Runtime: Node.js (via npx / npm execution)
+* Default Local Port: 5678
+* Network Tunneling Tool: ngrok (v3 or higher)
+* Secure Protocol Requirement: HTTPS (enforced by Telegram API)
+* File Directory Path (Testing): C:\Users\HP\.n8n-files\
 
-Authentication Types Used:
-1. Google Gemini: API Key (stored in n8n encrypted Credential Manager)
+2. NETWORK & ENVIRONMENT VARIABLES
+----------------------------------------------------------------------
+To ensure Telegram can communicate with the local n8n instance, the
+following environment variables must be injected at runtime:
 
-Node Flow & Logic:
-- Manual Trigger: The workflow is designed for local execution by clicking "Execute Workflow".
-- Data Intake: Uses the "Read Binary File" node to access a PDF resume from the designated secure folder (C:\Users\HP\.n8n-files).
-- Parsing: An "Extract from File" node converts the binary PDF data into processable text.
-- Job Aggregation: A "Set" (Edit Fields) node holds a hardcoded array of open job requirements to simulate a multi-source data feed.
-- AI Logic: The Google Gemini node (using model gemini-1.5-flash) receives the resume text and the job requirements via an expression prompt. It generates the best match and an explanation.
-- Output: The AI-generated match is mapped to the final output node for review.
+* Variable Name: WEBHOOK_URL
+* Purpose: Overrides n8n's default localhost root with the public tunnel address.
+* Windows CMD Assignment Syntax:
+  set WEBHOOK_URL=https://<your-unique-id>.ngrok-free.app
 
-Note: Due to local network constraints preventing secure public webhook callbacks, this workflow is configured for manual local file processing.
+3. EXTERNAL INTEGRATIONS & CREDENTIAL SCHEMAS
+----------------------------------------------------------------------
+The system utilizes three primary integration vectors. Actual secret 
+keys are securely stored locally within n8n's SQLite database and are 
+omitted from the workflow.json distribution.
+
+A. Telegram Bot API
+   * Node Target: Telegram Trigger & Telegram (Action)
+   * Auth Type: API Token
+   * Provisioned via: @BotFather on Telegram
+   * Operational Rule: Privacy settings must allow document reading; 
+     the user must initialize interaction with the /start command.
+
+B. Google Gemini API
+   * Node Target: Google Gemini Chat Model (Advanced AI)
+   * Auth Type: API Key
+   * Model Variant: gemini-1.5-flash
+   * Provisioned via: Google AI Studio
+
+C. Google Sheets API
+   * Node Target: Google Sheets
+   * Auth Type: OAuth2 (User)
+   * Required Scopes: https://www.googleapis.com/auth/spreadsheets.readonly
+   * Provisioned via: Google Cloud Console (External Testing Mode)
+
+4. NODE SPECIFIC CONFIGURATIONS
+----------------------------------------------------------------------
+* Telegram Trigger:
+  - Updates: [message]
+  - Message Type: [Document]
+  - Download: true
+  
+* If Node (File Validation):
+  - Condition: String
+  - Value 1: {{ $json.message.document.mime_type }}
+  - Operation: Equal
+  - Value 2: application/pdf
+  - True Output -> Routed to Extract from File
+  
+* Extract from File:
+  - Operation: Read From Binary Data
+  - Binary Property: attachment_0 (or data)
+  
+* Google Sheets:
+  - Resource: Sheet
+  - Operation: Get row(s) in sheet
+  - Data Option: "Return All" toggled ON (Bypasses default 1-row limit)
+  - Routing: Unconnected (Data pulled dynamically via expression)
+  
+* Basic LLM Chain:
+  - Input: Connected directly to Extract from File node
+  - Model Input: Fed by Google Gemini Chat Model node
+  - Dynamic Data: Pulls global job list via JSON.stringify($('Google Sheets').all())
+======================================================================

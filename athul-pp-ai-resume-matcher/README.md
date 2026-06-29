@@ -19,18 +19,19 @@ An automated, multi-source AI recruitment automation workflow built using **n8n*
 
 * **Telegram Interface**: Replaces manual file triggers with a remote conversational bot, enabling mobile resume submission.
 * **Secure Webhook Tunneling**: Integrates `ngrok` to bypass local networking restrictions, creating a secure HTTPS bridge for real-time Telegram event triggers.
+* **Input Validation**: Includes logic routing to ensure only valid `.pdf` documents are processed by the pipeline, preventing workflow crashes from invalid message types.
 * **Dynamic Job Board Retrieval**: Automatically pulls all active job openings, titles, and descriptions from a live Google Sheet using secure Google OAuth2 authorization.
-* **Advanced AI Orchestration**: Utilizes n8n's Advanced AI framework (**Basic LLM Chain** paired with a **Google Gemini Chat Model**) to process both unstructured PDF text and tabular sheet data in a single prompt execution.
+* **Advanced AI Orchestration**: Utilizes n8n's Advanced AI framework (**Basic LLM Chain** paired with a **Google Gemini Chat Model**) to evaluate unstructured PDF text against global spreadsheet data in a single prompt execution.
 
 ---
 
 ## Technical Workflow Architecture
 
 1. **Intake**: The user uploads a resume (`.pdf`) to the Telegram Bot. The **Telegram Trigger** fetches the file stream into local binary storage (`attachment_0`).
-2. **Extraction**: The **Extract from File** node parses the raw binary data into a string variable (`text`).
-3. **Database Pull**: The **Google Sheets** node executes a `Get row(s)` operation with data pooling turned on (`Return All`), reading the global list of target roles.
-4. **Data Aggregation**: A **Merge** node groups the parsed profile text with the full structural job board array.
-5. **AI Evaluation**: The **Basic LLM Chain** compiles the combined context window and injects it into a structured prompt evaluated by `gemini-1.5-flash`.
+2. **Validation**: An **If** node intercepts the payload and verifies the file's MIME type is `application/pdf`. Invalid payloads are dropped.
+3. **Extraction**: The **Extract from File** node parses the raw binary data into a string variable (`text`).
+4. **Database Pull**: The **Google Sheets** node executes a `Get row(s)` operation with data pooling turned on (`Return All`), loading the global list of target roles into memory.
+5. **AI Evaluation**: The **Basic LLM Chain** receives the resume text directly and utilizes an expression (`.all()`) to pull the full job board array from the Google Sheets node. This combined context is injected into a structured prompt evaluated by `gemini-1.5-flash`.
 6. **Delivery**: A final **Telegram Action** node targets the sender's dynamic Chat ID, replying with the matching role and evaluation notes.
 
 ---
