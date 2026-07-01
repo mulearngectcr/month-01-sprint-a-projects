@@ -1,0 +1,473 @@
+{
+  "name": "Tech News Aggregator",
+  "nodes": [
+    {
+      "parameters": {
+        "url": "https://hacker-news.firebaseio.com/v0/topstories.json",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        208,
+        112
+      ],
+      "id": "a229800b-c79f-411f-b32e-2063b9ddfb5a",
+      "name": "HTTP Request1"
+    },
+    {
+      "parameters": {
+        "url": "=https://api.github.com/search/repositories?q=created:>{{ $now.minus({ days: 1 }).toFormat('yyyy-MM-dd') }}&sort=stars&order=desc&per_page=10",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        208,
+        -224
+      ],
+      "id": "4db2b063-9bdb-4ce8-842a-7df864fb790f",
+      "name": "HTTP Request"
+    },
+    {
+      "parameters": {
+        "maxItems": 10
+      },
+      "type": "n8n-nodes-base.limit",
+      "typeVersion": 1,
+      "position": [
+        416,
+        112
+      ],
+      "id": "0915d1e4-f70e-4b23-a965-5cd11592c3b9",
+      "name": "Limit"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3,
+      "position": [
+        576,
+        112
+      ],
+      "id": "c7f7b053-0eb9-4e51-83d9-f5639590a5c0",
+      "name": "Loop Over Items"
+    },
+    {
+      "parameters": {
+        "url": "=https://hacker-news.firebaseio.com/v0/item/{{$json.toString()}}.json",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        800,
+        112
+      ],
+      "id": "e461b77f-86b0-44df-86a4-5d62f3888f9d",
+      "name": "HTTP Request2"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "77cc6aa7-9907-4af7-92c2-95420a8ac5d6",
+              "name": "source",
+              "value": "Hacker News",
+              "type": "string"
+            },
+            {
+              "id": "858951d2-10ee-4d59-9825-f0d31bcff760",
+              "name": "title",
+              "value": "={{ $json.title }}",
+              "type": "string"
+            },
+            {
+              "id": "8ea4efd7-bb25-4b33-a434-ce9225b34410",
+              "name": "url",
+              "value": "={{ $json.url }}",
+              "type": "string"
+            },
+            {
+              "id": "eb4ca4d6-7996-44de-bfef-a027d99c1cdd",
+              "name": "score",
+              "value": "={{ $json.score }}",
+              "type": "number"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        992,
+        112
+      ],
+      "id": "653099e6-5ff2-43dc-be45-969f0bca33a2",
+      "name": "Edit Fields"
+    },
+    {
+      "parameters": {
+        "maxItems": 10
+      },
+      "type": "n8n-nodes-base.limit",
+      "typeVersion": 1,
+      "position": [
+        640,
+        -224
+      ],
+      "id": "1a3cb128-7340-4c99-b5e9-399085c13dc2",
+      "name": "Limit1"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "28a3ea2f-b65c-4477-84d9-522e876c880c",
+              "name": "source",
+              "value": "GitHub",
+              "type": "string"
+            },
+            {
+              "id": "e9c8654e-ad26-4781-ac58-08f75e6ec228",
+              "name": "title",
+              "value": "={{ $json.name }}",
+              "type": "string"
+            },
+            {
+              "id": "f44465f6-c8db-4212-8c10-d05e2fb254f2",
+              "name": "url",
+              "value": "={{$json.html_url}}",
+              "type": "string"
+            },
+            {
+              "id": "4713dbbb-0b7f-4df1-ad24-6f57cb7a3fb6",
+              "name": "score",
+              "value": "={{$json.stargazers_count}}",
+              "type": "number"
+            },
+            {
+              "id": "933dc982-be64-45ff-84a0-b4272c86613a",
+              "name": "description",
+              "value": "={{$json.description}}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        848,
+        -224
+      ],
+      "id": "f464942e-0d68-4b18-8264-00e59624998d",
+      "name": "Edit Fields1"
+    },
+    {
+      "parameters": {
+        "fieldToSplitOut": "items",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.splitOut",
+      "typeVersion": 1,
+      "position": [
+        432,
+        -224
+      ],
+      "id": "f0bd03e5-7f2d-4637-994a-70ec35014e9d",
+      "name": "Split Out"
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3.2,
+      "position": [
+        1072,
+        -96
+      ],
+      "id": "1b24134a-762c-47f4-8939-f31f2ce9ffb8",
+      "name": "Merge"
+    },
+    {
+      "parameters": {
+        "aggregate": "aggregateAllItemData",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.aggregate",
+      "typeVersion": 1,
+      "position": [
+        1280,
+        -96
+      ],
+      "id": "169e9b45-4760-4a12-996f-81e37878558b",
+      "name": "Aggregate"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=You are a technology news editor.\n\nYou will receive a JSON array containing the latest Hacker News articles and GitHub repositories.\n\nYour task is to:\n\n1. Read every item.\n2. Identify the major technology trends.\n3. Group related stories together naturally.\n4. Mention whether each item came from Hacker News or GitHub.\n5. Highlight repositories that appear particularly useful or popular.\n6. Produce a concise daily digest using HTML.\n7. Keep the response under 300 words.\n{{ JSON.stringify($json.data, null, 2) }}",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3.1,
+      "position": [
+        1488,
+        -96
+      ],
+      "id": "3916dcd6-77e6-49ea-bdd3-50f002aa7446",
+      "name": "AI Agent"
+    },
+    {
+      "parameters": {
+        "model": "llama-3.3-70b-versatile",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGroq",
+      "typeVersion": 1,
+      "position": [
+        1488,
+        128
+      ],
+      "id": "174986d0-1612-41b8-b8cc-7cc915e0ec49",
+      "name": "Groq Chat Model",
+      "credentials": {
+        "groqApi": {
+          "id": "",
+          "name": "Groq account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "fromEmail": "sidharthvjain@gmail.com",
+        "toEmail": "sidharthsgdrive@gmail.com",
+        "subject": "Tech Digest",
+        "html": "={{ $json.output }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.emailSend",
+      "typeVersion": 2.1,
+      "position": [
+        1824,
+        -96
+      ],
+      "id": "c5e785f9-9142-48e4-aa14-b1deba27be1a",
+      "name": "Send an Email",
+      "webhookId": "6dca37f0-78d8-4398-a8d5-83335e932045",
+      "credentials": {
+        "smtp": {
+          "id": "",
+          "name": "SMTP account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "triggerAtHour": 9
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.3,
+      "position": [
+        0,
+        0
+      ],
+      "id": "13cdc3fa-6744-483b-ad9d-22d031d598d3",
+      "name": "Schedule Trigger"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "HTTP Request1": {
+      "main": [
+        [
+          {
+            "node": "Limit",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP Request": {
+      "main": [
+        [
+          {
+            "node": "Split Out",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Limit": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Items",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Loop Over Items": {
+      "main": [
+        [
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 1
+          }
+        ],
+        [
+          {
+            "node": "HTTP Request2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP Request2": {
+      "main": [
+        [
+          {
+            "node": "Edit Fields",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Limit1": {
+      "main": [
+        [
+          {
+            "node": "Edit Fields1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Split Out": {
+      "main": [
+        [
+          {
+            "node": "Limit1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Edit Fields": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Items",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Edit Fields1": {
+      "main": [
+        [
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Merge": {
+      "main": [
+        [
+          {
+            "node": "Aggregate",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Aggregate": {
+      "main": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Groq Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Agent": {
+      "main": [
+        [
+          {
+            "node": "Send an Email",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Schedule Trigger": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request1",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "HTTP Request",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "availableInMCP": false
+  },
+  "versionId": "4a3ca6f3-e36d-4128-b9d9-2f1cdf89223b",
+  "meta": {
+    "instanceId": "2f9cc00633ff2400a5fccc061871bb869794fc3d67d0abebaa7df07c1f61b213"
+  },
+  "nodeGroups": [],
+  "id": "foN4tMfpskO5DQR6",
+  "tags": []
+}

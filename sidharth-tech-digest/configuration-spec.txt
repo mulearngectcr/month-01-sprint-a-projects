@@ -1,0 +1,73 @@
+Configuration Specification (Integration Manual)
+
+Project Overview
+
+This n8n workflow aggregates technology news from multiple sources,
+summarizes the collected information using an AI model, and delivers a
+formatted HTML email digest.
+
+External Services Connected
+
+  -----------------------------------------------------------------------
+  Service            Purpose            Authentication
+  ------------------ ------------------ ---------------------------------
+  Hacker News API    Retrieves the      None (Public API)
+                     latest top story   
+                     IDs and story      
+                     details            
+
+  GitHub REST API    Searches for       None (Public API)
+                     trending/popular   
+                     repositories       
+
+  Groq API (Llama    Generates a        API Key
+  3.3 70B Versatile) concise daily      
+                     summary of the     
+                     aggregated data    
+
+  Gmail (SMTP)       Sends the          SMTP Credentials
+                     generated          
+                     technology digest  
+                     via email          
+  -----------------------------------------------------------------------
+
+Data Flow
+
+1.  Schedule Trigger starts the workflow daily at 9 AM.
+2.  Hacker News API retrieves the top story IDs.
+3.  The first 10 IDs are processed individually to fetch full story
+    details.
+4.  GitHub Search API retrieves the latest popular repositories according to the following expression:
+https://api.github.com/search/repositories?q=created:>{{ $now.minus({ days: 1 }).toFormat('yyyy-MM-dd') }}&sort=stars&order=desc&per_page=10
+5.  Data from both APIs is normalized into a common schema.
+6.  Both branches are merged into a single collection.
+7.  The Aggregate node combines all items into one JSON object.
+8.  The AI node summarizes and organizes the combined information.
+9.  Gmail sends the generated HTML digest to the recipient.
+
+Authentication Summary
+
+-   Hacker News API: No authentication required.
+-   GitHub REST API: No authentication required.
+-   Groq API: API Key authentication.
+-   Gmail: SMTP credentials.
+
+AI Prompt
+
+You are a technology news editor.
+
+You will receive a JSON array containing the latest Hacker News articles and GitHub repositories.
+
+Your task is to:
+
+1. Read every item.
+2. Identify the major technology trends.
+3. Group related stories together naturally.
+4. Mention whether each item came from Hacker News or GitHub.
+5. Highlight repositories that appear particularly useful or popular.
+6. Produce a concise daily digest using HTML.
+7. Keep the response under 300 words.
+{{ JSON.stringify($json.data, null, 2) }}
+
+The aggregated JSON data is appended after the prompt and provided as
+the AI model input.
