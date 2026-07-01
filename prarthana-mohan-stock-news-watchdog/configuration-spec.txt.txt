@@ -1,0 +1,46 @@
+Project Name:
+Stock News Watchdog
+
+Purpose:
+Automatically monitors a stock portfolio, fetches the latest news, performs AI sentiment analysis, and sends a recommendation notification.
+
+Services Connected:
+1. Google Sheets
+2. NewsAPI
+3. Google Gemini API
+4. Telegram Bot API
+
+Authentication:
+Google Sheets - OAuth2
+NewsAPI - API Key
+Gemini - API Key
+Telegram - Bot Token
+
+Workflow:
+Schedule Trigger
+↓
+Read Portfolio
+↓
+Fetch News
+↓
+Merge Headlines
+↓
+AI Sentiment Analysis
+↓
+Parse JSON
+↓
+Decision Logic
+↓
+Telegram Notification
+
+Gemini Prompt:
+You are a stock market analyst.
+
+Analyze these news headlines.
+
+Return ONLY valid JSON.
+
+Provide:
+- Overall sentiment
+- Confidence percentage
+- BUY/HOLD/SELL recommendation

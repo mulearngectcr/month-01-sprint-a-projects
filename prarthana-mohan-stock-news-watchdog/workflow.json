@@ -1,0 +1,289 @@
+{
+  "name": "Stock news watchdog",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "triggerAtHour": 9
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.3,
+      "position": [
+        -1216,
+        -384
+      ],
+      "id": "73d22b77-6500-4f08-9794-7da95b78588f",
+      "name": "Schedule Trigger"
+    },
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "value": "1elQ3Au1XxcRdFRyf5hK3BR2fZu0z_OOdRRlrzjuc_7o",
+          "mode": "list",
+          "cachedResultName": "Portfolio",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1elQ3Au1XxcRdFRyf5hK3BR2fZu0z_OOdRRlrzjuc_7o/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Sheet1",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1elQ3Au1XxcRdFRyf5hK3BR2fZu0z_OOdRRlrzjuc_7o/edit#gid=0"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        -1056,
+        -384
+      ],
+      "id": "56a0d02c-1527-4459-a485-435daea0c60c",
+      "name": "Get row(s) in sheet",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "I3KRVddeNmp2celH",
+          "name": "Google Sheets OAuth2 API"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "url": "=https://newsapi.org/v2/everything?q={{$json.Symbol}}&sortBy=publishedAt&language=en&pageSize=5&apiKey=3f0385301d5949ceba8332ab6c2c525e",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        -880,
+        -384
+      ],
+      "id": "2d6b3787-64a2-4200-8ba6-735844570c67",
+      "name": "HTTP Request"
+    },
+    {
+      "parameters": {
+        "jsCode": "const articles = $json.articles;\n\nlet headlines = \"\";\n\nfor (const article of articles) {\n    headlines += article.title + \"\\n\";\n}\n\nreturn [\n{\njson:{\nheadlines\n}\n}\n];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -720,
+        -384
+      ],
+      "id": "8e2700ca-5a14-4a89-abd9-350ac19a1060",
+      "name": "Code in JavaScript"
+    },
+    {
+      "parameters": {
+        "modelId": {
+          "__rl": true,
+          "value": "models/gemini-2.5-flash",
+          "mode": "list",
+          "cachedResultName": "models/gemini-2.5-flash"
+        },
+        "messages": {
+          "values": [
+            {
+              "content": "=You are a stock market analyst.\n\nAnalyze these news headlines.\n\nReturn ONLY valid JSON.\n\nDo NOT use markdown.\nDo NOT wrap the response in ```json.\nDo NOT include explanations.\n\nFormat exactly like this:\n\n{\n  \"overall_sentiment\": \"Positive\",\n  \"confidence_percent\": 90,\n  \"recommendation\": \"BUY\"\n}\n\nNews:\n{{ $json.headlines }}"
+            }
+          ]
+        },
+        "builtInTools": {},
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.googleGemini",
+      "typeVersion": 1.2,
+      "position": [
+        -560,
+        -384
+      ],
+      "id": "dd42bc7b-ee2b-48e6-b85c-0fd02621923a",
+      "name": "Message a model",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "GjIOyoKASNlEuuBL",
+          "name": "Google Gemini(PaLM) Api account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "938e6bae-2a2c-49e0-92c4-a1ecee6708a8",
+              "leftValue": "={{ $json.overall_summary.recommendation }}",
+              "rightValue": "BUY",
+              "operator": {
+                "type": "string",
+                "operation": "equals",
+                "name": "filter.operator.equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        -272,
+        -384
+      ],
+      "id": "9c0bb278-cdd5-48c1-b325-1c290bab0d25",
+      "name": "If"
+    },
+    {
+      "parameters": {
+        "sendTo": "prarthanamohana@gmail.com",
+        "subject": "Stock Alert!!!",
+        "emailType": "text",
+        "message": "The AI recommends BUY for this stock based on today's news",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.2,
+      "position": [
+        -80,
+        -400
+      ],
+      "id": "a4e7001d-6d25-4244-a8d6-5e2952c0a030",
+      "name": "Send a message",
+      "webhookId": "8443884e-637e-4a8e-a11c-98a05664b6fd",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "by3QKODVg88k2YF7",
+          "name": "Gmail OAuth2 API"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "sendTo": "prarthanamohana@gmail.com",
+        "subject": "Stock Alert!!",
+        "emailType": "text",
+        "message": "=Daily Stock Report\nThe AI recommends to hold or sell this stock based on today's news",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.2,
+      "position": [
+        -144,
+        -208
+      ],
+      "id": "0b3f4a5f-0a61-4173-a9c5-4b5a51772262",
+      "name": "Send a message1",
+      "webhookId": "bd6263b1-09c3-4b54-bc12-478e19692a83",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "by3QKODVg88k2YF7",
+          "name": "Gmail OAuth2 API"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Schedule Trigger": {
+      "main": [
+        [
+          {
+            "node": "Get row(s) in sheet",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get row(s) in sheet": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP Request": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript": {
+      "main": [
+        [
+          {
+            "node": "Message a model",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Message a model": {
+      "main": [
+        [
+          {
+            "node": "If",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If": {
+      "main": [
+        [
+          {
+            "node": "Send a message",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Send a message1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "availableInMCP": false
+  },
+  "versionId": "dda3f4b9-6f60-4bd9-8778-5329b10d3d05",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "945073909e322513ca529a8d73e362f3d9cd7fe5920b1674ba8783adf49415a9"
+  },
+  "nodeGroups": [],
+  "id": "n58OfJrMrnxPfdHz",
+  "tags": []
+}
