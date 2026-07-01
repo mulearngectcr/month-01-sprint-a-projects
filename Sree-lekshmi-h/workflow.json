@@ -1,0 +1,298 @@
+{
+  "name": "lost&found",
+  "nodes": [
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=You are a Lost & Found matching assistant.\n\nYou will receive two JSON objects.\n\nFound Item:\n\n{\n  \"category\": \"{{ $('Found Form').item.json['What category does the found item fall into?'] }}\",\n  \"item_name\": \"{{ $('Found Form').item.json['Item name'] }}\",\n  \"description\": \"{{ $('Found Form').item.json['Please provide a detailed description of the item, including unique markings, color, brand, or serial numbers that can help verify ownership.'] }}\",\n  \"found_date\": \"{{ $('Found Form').item.json['Approximate date and time the item was found:'] }}\",\n  \"found_location\": \"{{ $('Found Form').item.json['Where specifically was the item found?'] }}\",\n  \"additional_notes\": \"{{ $('Found Form').item.json['Additional Notes(Optional)'] }}\"\n}\n\nLost Item:\n\n{\n  \"category\": \"{{ $json['What category does your lost item fall into?'] }}\",\n  \"item_name\": \"{{ $json['Item name'] }}\",\n  \"description\": \"{{ $json['Please provide a detailed description of the item, including unique markings, color, brand, or serial numbers that can help verify ownership.'] }}\",\n  \"lost_date\": \"{{ $json['Approximate date and time the item was last seen:'] }}\",\n  \"lost_location\": \"{{ $json['Where specifically was the item last seen or dropped?'] }}\",\n  \"distinctive_feature\": \"{{ $json['Distinctive feature(Optional)'] }}\",\n  \"additional_notes\": \"{{ $json['Additional Notes(Optional)'] }}\"\n}\n\nCompare these fields:\n\nFound Item\n- category\n- item_name\n- description\n- found_date\n- found_location\n- additional_notes\n\nLost Item\n- category\n- item_name\n- description\n- lost_date\n- lost_location\n- distinctive_feature\n- additional_notes\n\nEvaluation Criteria\n\n1. Category\n- Must be the same or a close equivalent.\n\n2. Item Name\n- Allow similar names.\n\n3. Description\nCompare:\n- color\n- brand\n- model\n- serial number\n- size\n- unique markings\n- scratches\n- stickers\n- engravings\n- contents\n- material\n\n4. Location\n- Nearby locations are acceptable.\n\n5. Date\n- A found date shortly after the lost date increases confidence.\n\n6. Distinctive Features\n- Treat matching distinctive features as strong evidence.\n\n7. Additional Notes\n- Use only as supporting evidence.\n\nConfidence Score\n90-100 : Strong Match\n70-89 : Good Match\n50-69 : Possible Match\n0-49 : Not a Match\n\nReturn ONLY valid JSON.\n\n{\n  \"match\": true,\n  \"confidence\": 94,\n  \"reason\": \"Brief explanation in one sentence.\"\n}\n\nor\n\n{\n  \"match\": false,\n  \"confidence\": 18,\n  \"reason\": \"Brief explanation in one sentence.\"\n}\n\nRules\n- Return exactly one JSON object.\n- Do not use Markdown.\n- Do not include extra text.\n- If confidence is below 70, set \"match\" to false.\n- If important identifying details conflict (category, color, serial number, or distinctive features), return false.",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3.1,
+      "position": [
+        624,
+        0
+      ],
+      "id": "8d703e40-486e-4b3a-98a8-9962d60e357c",
+      "name": "AI Agent"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1.1,
+      "position": [
+        624,
+        272
+      ],
+      "id": "130e85df-25ed-4233-aea6-62713b633d16",
+      "name": "Google Gemini Chat Model",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "PuLO8NTL14bjJ7L1",
+          "name": "Google Gemini(PaLM) Api account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "options": {
+          "reset": false
+        }
+      },
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3,
+      "position": [
+        400,
+        16
+      ],
+      "id": "ffb85a9c-9265-4bd1-867c-2dd081d7cbf7",
+      "name": "Loop Over Items"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "2bba9ac8-086f-4a40-b90c-89a74a90c995",
+              "leftValue": "={{ JSON.parse($json.output.replace(/\\\\n/g, '').replace(/\\\\/g, '')).match }}",
+              "rightValue": "true",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "looseTypeValidation": true,
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        976,
+        0
+      ],
+      "id": "a1db6335-4f57-4e8e-897f-a125cc05920a",
+      "name": "If"
+    },
+    {
+      "parameters": {
+        "sendTo": "={{ $('Lost Form').item.json['Email Address'] }}",
+        "subject": "Lost Item Found",
+        "message": "=Dear {{ $('Lost Form').item.json['Full Name '] }},  Good news! Our Lost & Found system has identified a potential match for the item you reported as lost.  Match Details: • Category: {{ $('Found Form').item.json['What category does the found item fall into?'] }} • Item Name: {{ $('Found Form').item.json['Item name'] }} • Location Found: {{ $('Found Form').item.json['Where specifically was the item found?'] }} • Date Found: {{ $('Found Form').item.json['Approximate date and time the item was found:'] }}  Description: {{ $('Found Form').item.json['Please provide a detailed description of the item, including unique markings, color, brand, or serial numbers that can help verify ownership.'] }}  Your Lost Item Details: • Last Seen Location: {{ $('Lost Form').item.json['Where specifically was the item last seen or dropped?'] }} • Last Seen Date: {{ $('Lost Form').item.json['Approximate date and time the item was last seen:'] }} • Distinctive Feature: {{ $('Lost Form').item.json['Distinctive feature(Optional)'] }}  If you believe this is your item, please reply to this email or contact the Lost & Found office with proof of ownership.  This is only a potential match and ownership will be verified before the item is returned.  Thank you, Lost & Found Team",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.2,
+      "position": [
+        1264,
+        -48
+      ],
+      "id": "331cc6f4-2515-41bf-972f-bf7c652ecd76",
+      "name": "Send a message",
+      "webhookId": "017f12ae-b5a1-4c60-8c4c-e2ea7032cee0",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "xLwL3MZdE6Pzrq80",
+          "name": "Gmail account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "pollTimes": {
+          "item": [
+            {
+              "mode": "everyMinute"
+            }
+          ]
+        },
+        "documentId": {
+          "__rl": true,
+          "value": "https://docs.google.com/spreadsheets/d/1_C2Cdi8uf8UMuBrCmWGbWFxpwkUHc0t1aXfz9uScfZU/edit?resourcekey=&gid=53023091#gid=53023091",
+          "mode": "url"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": 53023091,
+          "mode": "list",
+          "cachedResultName": "Form Responses 1",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1_C2Cdi8uf8UMuBrCmWGbWFxpwkUHc0t1aXfz9uScfZU/edit#gid=53023091"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheetsTrigger",
+      "typeVersion": 1,
+      "position": [
+        0,
+        0
+      ],
+      "id": "288eca71-15e3-44b1-9cd1-901b4f4f8354",
+      "name": "Found Form",
+      "credentials": {
+        "googleSheetsTriggerOAuth2Api": {
+          "id": "qopmuewWJoWSMTi8",
+          "name": "Google Sheets Trigger account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "value": "https://docs.google.com/spreadsheets/d/1DCrxjvWqKq7aEIs7EEQiUIm-ZjObi6NQ-oFZSI_Zz9k/edit?resourcekey=&gid=1986826530#gid=1986826530",
+          "mode": "url"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": 1986826530,
+          "mode": "list",
+          "cachedResultName": "Form Responses 1",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1DCrxjvWqKq7aEIs7EEQiUIm-ZjObi6NQ-oFZSI_Zz9k/edit#gid=1986826530"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        208,
+        0
+      ],
+      "id": "0962e998-beae-4217-bc77-a1e0b4b21d01",
+      "name": "Lost Form",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "hs4NspBBk7niXSHG",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "sendTo": "={{ $('Found Form').item.json['Email Address'] }}",
+        "subject": "Owner Found",
+        "message": "=Dear {{ $('Found Form').item.json['Full Name'] }},  Thank you for reporting a found item to the Lost & Found system.  We are pleased to inform you that we have identified a potential owner for the item you found.  Item Details: • Category: {{ $('Found Form').item.json['What category does the found item fall into?'] }} • Item Name: {{ $('Found Form').item.json['Item name'] }} • Date Found: {{ $('Found Form').item.json['Approximate date and time the item was found:'] }} • Location Found: {{ $('Found Form').item.json['Where specifically was the item found?'] }}  At this stage, we are verifying the ownership of the item. Please keep the item safe and do not hand it over directly to anyone until the verification process is complete.  If we require any additional information, we will contact you.  Thank you for your honesty and for helping reunite lost items with their owners.  Best regards,  Lost & Found Team",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.2,
+      "position": [
+        1296,
+        176
+      ],
+      "id": "902ef6c9-90c2-41cc-8026-7f174b34f375",
+      "name": "Send a message1",
+      "webhookId": "9a52c469-c877-45ee-9d07-a7a04ba1fed2",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "xLwL3MZdE6Pzrq80",
+          "name": "Gmail account 2"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Google Gemini Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Loop Over Items": {
+      "main": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Loop Over Items",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Agent": {
+      "main": [
+        [
+          {
+            "node": "If",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If": {
+      "main": [
+        [
+          {
+            "node": "Send a message",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Send a message1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Found Form": {
+      "main": [
+        [
+          {
+            "node": "Lost Form",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Lost Form": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Items",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "availableInMCP": false
+  },
+  "versionId": "9c3689b9-f8ec-4c98-8ca2-22572f9405b7",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "e4e118cd0b21c5d6b272259d3a5047e4fbb4e501e42abd6ee9a03f18be7019f0"
+  },
+  "nodeGroups": [],
+  "id": "9yqTrbLpoahw8Viz",
+  "tags": []
+}
