@@ -1,0 +1,279 @@
+{
+  "name": "ai resume matcher",
+  "nodes": [
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "value": "https://docs.google.com/spreadsheets/d/15614Xy1n3y8Lk7jJRBXQhnNdLRoiVnkXya8OAac3K9U/edit?gid=0#gid=0",
+          "mode": "url"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "Sheet1",
+          "mode": "name"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        32,
+        192
+      ],
+      "id": "983e57ef-bbab-4b27-a6cf-5ba83e93168b",
+      "name": "Get row(s) in sheet",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "gN22ydHS2C84n7SU",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "pdf",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.extractFromFile",
+      "typeVersion": 1.1,
+      "position": [
+        176,
+        32
+      ],
+      "id": "e6a503e4-2ace-4569-9e25-28b8f80f3d32",
+      "name": "Extract from File"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=You are an expert technical recruiter. Review the following resume: \n\n{{ $json.text }}\n\nCompare it against this list of open jobs: \n\n{{ JSON.stringify($('Get row(s) in sheet').all()) }}\n\nReturn only the single best-matching job title and a 2-sentence explanation of why it is the best fit.",
+        "batching": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.chainLlm",
+      "typeVersion": 1.9,
+      "position": [
+        400,
+        112
+      ],
+      "id": "a06d98fb-c156-4ccb-b2bf-0641955b2404",
+      "name": "Basic LLM Chain"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1,
+      "position": [
+        336,
+        304
+      ],
+      "id": "97b02050-36fd-4671-8335-211f26e4a642",
+      "name": "Google Gemini Chat Model",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "tK31z3b6oUJwrc81",
+          "name": "Google Gemini(PaLM) Api account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "updates": [
+          "message"
+        ],
+        "additionalFields": {
+          "download": true
+        }
+      },
+      "type": "n8n-nodes-base.telegramTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        -304,
+        112
+      ],
+      "id": "58d2373a-8345-4a9f-9774-e016bbb26dcc",
+      "name": "Telegram Trigger",
+      "webhookId": "4b16a366-fd7a-4580-9b8e-7f5f447fba4e",
+      "credentials": {
+        "telegramApi": {
+          "id": "mKDVlsLCHWjslbjp",
+          "name": "Telegram account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $('Telegram Trigger').item.json.message.chat.id }}",
+        "text": "={{ $json.text }}",
+        "additionalFields": {}
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        704,
+        112
+      ],
+      "id": "44ff4842-aebe-4953-9f84-bbdbb55b6f0e",
+      "name": "Send a text message",
+      "webhookId": "36231560-3463-439d-86fb-db503d0d7a4f",
+      "credentials": {
+        "telegramApi": {
+          "id": "mKDVlsLCHWjslbjp",
+          "name": "Telegram account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "658dd2a8-d735-4241-b06f-b087f3724793",
+              "leftValue": "={{ $json.message.document.mime_type }}",
+              "rightValue": "application/pdf",
+              "operator": {
+                "type": "string",
+                "operation": "equals",
+                "name": "filter.operator.equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        -96,
+        48
+      ],
+      "id": "5c42c302-e458-43c1-b368-433e77376cf2",
+      "name": "If"
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $('Telegram Trigger').item.json.message.chat.id }}",
+        "text": "Please send your resume as a PDF",
+        "additionalFields": {}
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        176,
+        -128
+      ],
+      "id": "03c32275-f13d-4b28-96b1-0eef3743845c",
+      "name": "Send a text message1",
+      "webhookId": "c76e7a2c-cd76-44e7-9cda-4bf66855b285",
+      "credentials": {
+        "telegramApi": {
+          "id": "mKDVlsLCHWjslbjp",
+          "name": "Telegram account"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Extract from File": {
+      "main": [
+        [
+          {
+            "node": "Basic LLM Chain",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get row(s) in sheet": {
+      "main": [
+        [
+          {
+            "node": "Basic LLM Chain",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Gemini Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Basic LLM Chain",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Telegram Trigger": {
+      "main": [
+        [
+          {
+            "node": "Get row(s) in sheet",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "If",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Basic LLM Chain": {
+      "main": [
+        [
+          {
+            "node": "Send a text message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If": {
+      "main": [
+        [
+          {
+            "node": "Extract from File",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Send a text message1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "availableInMCP": false
+  },
+  "versionId": "252512b7-f0c0-4ab0-b2e1-508c1feb3f3c",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "4c116f0452e51577b4b6c536a0b8a3371f0f3db8d75da256cc0f4e7f99a203e1"
+  },
+  "id": "KNvvYilOcKXR7Zfy",
+  "tags": []
+}
